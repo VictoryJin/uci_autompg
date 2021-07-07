@@ -15,7 +15,7 @@ def import_dataset(offline=True):
     colnames = ['mpg', 'cylinders', 'displacement', 'horsepower', 'weight', 'acceleration', 'year', 'origin', 'name']
 
     try:
-        df = pd.read_csv(CUR_PATH.parent / 'data' / 'auto-mpg.data',
+        df = pd.read_csv(CUR_PATH / 'data' / 'auto-mpg.data',
                          delim_whitespace=True,
                          names=colnames,
                          na_values='?')
