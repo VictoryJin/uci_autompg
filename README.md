@@ -1,9 +1,24 @@
 # Introduction
 
-Quick practice to data analytics, feature engineering, model training/comparison, validations, etc.
+Quick practice to basic data science workflow based on my experience. Part of the goal for this exercise is to have a quick reference for data science methods and to create a reusable data science framework. This repo demonstrates the following
+#### Data Science
+* Data Analysis
+* Feature Engineering
+* Short Text Analysis
+* Long text analysis (unavailable via the UCI dataset)
+* Model development
+    * Supervised methods
+    * Unsupervised methods
+    * Neural Networks
+    * Model interpretability  
+
+#### MLOps
+* Utility libraries and pipeline development under `src`
+* Operationalization
+* Dashboarding
 
 # TODOs
-Part of the goal for this exercise is to create a reusable data pipeline. After importing the dataset, it would automatically feature engineer the columns and test using a custom series of models. This requires the following functions:
+After importing the dataset, it would automatically feature engineer the columns and test using a custom series of models. This requires the following functions:
 * Automatic feature engineering based on column types
     * normalization, categorical expansion, imputation strategies
 * Creates model files
