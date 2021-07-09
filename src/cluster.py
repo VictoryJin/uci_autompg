@@ -1,68 +1,55 @@
+"""Used to cluster similar words and print out result for utils.cluster_fuzz method"""
 
+from fuzzywuzzy import fuzz
 
-#Threshold to use for clustering.  The variable with the highest ROC from each cluster will be returned.
-corr_thresh = 0.4
-corr_df = corr_trdf
-
-# This Node class will allow us to sort variables by their ROC values
 class Node:
-    def __init__(self, name, roc):
+    """This Node class allows us to sort variables by their frequency. Each unique name is weighted based on the frequency
+    """
+    def __init__(self, name, freq):
         self.name = name
-        self.roc = roc
+        self.freq = freq
         
     def __lt__(self, other):
-        return self.roc < other.roc
+        return self.freq < other.freq
     
     def __eq__(self, other):
-        return self.roc == other.roc
+        return self.freq == other.freq
     
     def __gt__(self, other):
-        return self.roc > other.roc
+        return self.freq > other.freq
     
     def __hash__(self):
         return hash(self.name)
     
     def __str__(self):
-        return '{:.3f} {}'.format(self.roc, self.name)
+        return '{:.0f} {}'.format(self.freq, self.name)
 
-# Assume existence of rocDict from above.
-nodeDict = {}
-for nodeName in rocDict.keys():
-    nodeDict[nodeName] = Node(nodeName, rocDict[nodeName])
 
-# There will be one Link for every pair of variables.
 class Link:
-    def __init__(self, source, target, corr):
+    """Used to instantiate one link per each variable combination, based on fuzz.ratio score"""
+    def __init__(self, source, target, ratio):
         self.source = source
         self.target = target
-        self.corr = corr
+        self.ratio = ratio
     
     def __lt__(self, other):
-        return self.corr < other.corr
+        return self.ratio < other.ratio
     
     def __eq__(self, other):
-        return self.corr == other.corr
+        return self.ratio == other.ratio
     
     def __gt__(self, other):
-        return self.corr > other.corr
+        return self.ratio > other.ratio
     
     def __hash__(self):
         return hash(self.source.name + " " + self.target.name)
     
     def __str__(self):
-        return '{} <- {:.3f} -> {}'.format(self.source.name, self.corr, self.target.name)
+        return '{} <- {:.0f} -> {}'.format(self.source.name, self.ratio, self.target.name)
     
-
-linkSet = set()
-for i in range(len(corr_df.columns) - 1):
-    for j in range(i+1, len(corr_df.columns)):
-        link_corr = corr_df.iloc[i,j]
-        link_source = nodeDict[corr_df.columns[i]]
-        link_target = nodeDict[corr_df.columns[j]]
-        linkSet.add(Link(link_source, link_target, link_corr))
-        
-#Nodes will be added to a Cluster when one of their Links has a corr above the corr_thresh.
+    
 class Cluster:
+    """Nodes are added to a cluster when one of their LInks has a fuzz.ratio above ratio_threshold"""
     def __init__(self, node):
         self.nodes = {node}
         self.maxNode = node
@@ -78,45 +65,13 @@ class Cluster:
             self.add(node)
     
     def __lt__(self, other):
-        return self.maxNode.roc < other.maxNode.roc
+        return self.maxNode.freq < other.maxNode.freq
     
     def __gt__(self, other):
-        return self.maxNode.roc > other.maxNode.roc
+        return self.maxNode.freq > other.maxNode.freq
     
     def __hash__(self):
         return hash(self.name)
     
     def __str__(self):
-        return '{} {} | {:.3f} {}'.format(len(self.nodes), self.name, self.maxNode.roc, self.maxNode.name)
-
-
-clusterSet = set()
-#Start with each node in its own cluster.
-for nodeName in nodeDict.keys():
-    clusterSet.add(Cluster(nodeDict[nodeName]))
-    
-# Iterate through list of links, sorted in descending order of correlation, and do clustering.
-for link in sorted(linkSet, reverse=True):
-    if(link.corr < corr_thresh):
-        break
-    sourceCluster = None
-    for cluster in clusterSet:
-        if(link.source in cluster.nodes):
-            sourceCluster = cluster
-            break
-    targetCluster = None
-    for cluster in clusterSet:
-        if(link.target in cluster.nodes):
-            targetCluster = cluster
-            break
-    if(not(sourceCluster is targetCluster)):
-        sourceCluster.join(targetCluster)
-        clusterSet.remove(targetCluster)
-    
-print(len(clusterSet))
-
-# Print out list of surviving clusters
-print('Variables for correlation threshold {}'.format(corr_thresh))
-print('---------------------------------------')
-for cluster in sorted(clusterSet, reverse=True):
-    print(cluster)
+        return f'{len(self.nodes)} {self.name}: {self.maxNode.freq} | CLUSTER: {[(fuzz.ratio(self.name, node.name),node.name) for node in self.nodes if not node.name==self.name]}'
