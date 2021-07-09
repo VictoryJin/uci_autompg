@@ -1,5 +1,8 @@
 import pandas as pd
 from pathlib import Path
+from fuzzywuzzy import fuzz
+
+from .cluster import Node, Link, Cluster
 
 CUR_PATH = Path.cwd()
 
@@ -63,3 +66,53 @@ def lazy_ldist(word1, word2):
     return 1 + min(lazy_ldist(word2[0]+word1, word2),     # insertion
                    lazy_ldist(word1[1:], word2),          # deletion
                    lazy_ldist(word2[0]+word1[1:], word2)) # replacement
+
+
+def cluster_fuzz(model_dict, ratio_threshold):
+    """Function that clusters similar names based on fuzz.ratio and prints priority word based on frequency. 
+    
+    Parameters:
+        model_dict(dict): dictionary containing model name as key and frequency as value. 
+        
+    
+    """
+    nodeDict = {}
+    for nodeName in model_dict.keys():
+        nodeDict[nodeName] = Node(nodeName, model_dict[nodeName])
+
+    linkSet = set()
+    for i in range(len(model_dict.keys())-1):
+        for j in range(i+1, len(model_dict.keys())):
+            link_ratio = fuzz.ratio(list(model_dict)[i], list(model_dict)[j])  # get ratio score
+            link_source = nodeDict[list(model_dict)[i]]                        # define source link
+            link_target = nodeDict[list(model_dict)[j]]                        # define target link
+            linkSet.add(Link(link_source, link_target, link_ratio))
+
+    clusterSet = set()
+    #Start with each node in its own cluster.
+    for nodeName in nodeDict.keys():
+        clusterSet.add(Cluster(nodeDict[nodeName]))
+
+    # Iterate through list of links, sorted in descending order of correlation, and do clustering.
+    for link in sorted(linkSet, reverse=True):
+        if(link.ratio < ratio_threshold):
+            break
+        sourceCluster = None
+        for cluster in clusterSet:
+            if(link.source in cluster.nodes):
+                sourceCluster = cluster
+                break
+        targetCluster = None
+        for cluster in clusterSet:
+            if(link.target in cluster.nodes):
+                targetCluster = cluster
+                break
+        if(not(sourceCluster is targetCluster)):
+            sourceCluster.join(targetCluster)
+            clusterSet.remove(targetCluster)
+
+    print(f"There are {len(clusterSet)} clusters")
+    print('Variables for correlation threshold {}'.format(ratio_threshold))
+    print('---------------------------------------')
+    for cluster in sorted(clusterSet, reverse=True):
+        print(cluster)
