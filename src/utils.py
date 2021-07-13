@@ -44,6 +44,14 @@ def import_dataset(offline=True):
     return df
 
 
+def get_column_by_type(df, dtype, exclude=False):
+    """Indexes and returns column by type, or excluded by type"""
+    if exclude:
+        return df.loc[:, df.dtypes != dtype]
+    else:
+        return df.loc[:, df.dtypes == dtype]
+
+
 def lazy_ldist(word1, word2):
     """Recomputes the distance for recursively via insert, delete, replace
     Reference: https://en.wikipedia.org/wiki/Levenshtein_distance#Recursive
