@@ -7,11 +7,11 @@ from .cluster import Node, Edge, Cluster
 CUR_PATH = Path.cwd()
 
 
-def import_dataset(offline=True):
+def import_dataset(remove_na=True):
     """Imports and cleans autompg dataset
 
     Parameters:
-        offline (bool): whether the data should be imported from offline or directly from uci url
+        remove_na (bool): whether the 6 rows containing NA values should be removed or not
     Returns:
         pandas dataframe of autompg with missing values and origin converted
     """
@@ -28,6 +28,10 @@ def import_dataset(offline=True):
         df = pd.read_csv(url, delim_whitespace=True, names=colnames, na_values='?')
 
     df['origin'] = df['origin'].map({1: 'USA', 2: 'Europe', 3: 'Japan'})
+    
+    # Remove_nas if specified
+    if remove_na:
+        df = df.dropna()
     
     # Based on `2. Fuzzy Matching.ipynb` - Retrieve model and fix model names based on fuzzy matches
     df['model'] = df['name'].apply(lambda x: x.split(' ')[0])
