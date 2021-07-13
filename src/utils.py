@@ -2,7 +2,7 @@ import pandas as pd
 from pathlib import Path
 from fuzzywuzzy import fuzz
 
-from .cluster import Node, Link, Cluster
+from .cluster import Node, Edge, Cluster
 
 CUR_PATH = Path.cwd()
 
@@ -28,6 +28,19 @@ def import_dataset(offline=True):
         df = pd.read_csv(url, delim_whitespace=True, names=colnames, na_values='?')
 
     df['origin'] = df['origin'].map({1: 'USA', 2: 'Europe', 3: 'Japan'})
+    
+    # Based on `2. Fuzzy Matching.ipynb` - Retrieve model and fix model names based on fuzzy matches
+    df['model'] = df['name'].apply(lambda x: x.split(' ')[0])
+    
+    correct_dict = {
+        'chevrolet': ['chevroelt', 'chevy'],
+        'toyota' : ['toyouta'],
+        'mazda'  : ['maxda'],
+        'volkswagen': ['vokswagen', 'vw'],
+        'mercedes-benz': ['mercedes']
+    }
+    for correct_wd in correct_dict.keys():
+        df['model'] = df['model'].replace(correct_dict[correct_wd], correct_wd)
     return df
 
 
@@ -80,31 +93,31 @@ def cluster_fuzz(model_dict, ratio_threshold):
     for nodeName in model_dict.keys():
         nodeDict[nodeName] = Node(nodeName, model_dict[nodeName])
 
-    linkSet = set()
+    edgeSet = set()
     for i in range(len(model_dict.keys())-1):
         for j in range(i+1, len(model_dict.keys())):
-            link_ratio = fuzz.ratio(list(model_dict)[i], list(model_dict)[j])  # get ratio score
-            link_source = nodeDict[list(model_dict)[i]]                        # define source link
-            link_target = nodeDict[list(model_dict)[j]]                        # define target link
-            linkSet.add(Link(link_source, link_target, link_ratio))
+            edge_ratio = fuzz.ratio(list(model_dict)[i], list(model_dict)[j])  # get ratio score
+            edge_source = nodeDict[list(model_dict)[i]]                        # define source edge
+            edge_target = nodeDict[list(model_dict)[j]]                        # define target edge
+            edgeSet.add(Edge(edge_source, edge_target, edge_ratio))
 
     clusterSet = set()
     #Start with each node in its own cluster.
     for nodeName in nodeDict.keys():
         clusterSet.add(Cluster(nodeDict[nodeName]))
 
-    # Iterate through list of links, sorted in descending order of correlation, and do clustering.
-    for link in sorted(linkSet, reverse=True):
-        if(link.ratio < ratio_threshold):
+    # Iterate through list of edges, sorted in descending order of correlation, and do clustering.
+    for edge in sorted(edgeSet, reverse=True):
+        if(edge.ratio < ratio_threshold):
             break
         sourceCluster = None
         for cluster in clusterSet:
-            if(link.source in cluster.nodes):
+            if(edge.source in cluster.nodes):
                 sourceCluster = cluster
                 break
         targetCluster = None
         for cluster in clusterSet:
-            if(link.target in cluster.nodes):
+            if(edge.target in cluster.nodes):
                 targetCluster = cluster
                 break
         if(not(sourceCluster is targetCluster)):
