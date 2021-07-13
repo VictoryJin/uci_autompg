@@ -25,8 +25,8 @@ class Node:
         return '{:.0f} {}'.format(self.freq, self.name)
 
 
-class Link:
-    """Used to instantiate one link per each variable combination, based on fuzz.ratio score"""
+class Edge:
+    """Used to instantiate one edge per each two nodes, based on fuzz.ratio score"""
     def __init__(self, source, target, ratio):
         self.source = source
         self.target = target
@@ -49,7 +49,7 @@ class Link:
     
     
 class Cluster:
-    """Nodes are added to a cluster when one of their LInks has a fuzz.ratio above ratio_threshold"""
+    """Nodes are added to a cluster when one of their edges has a fuzz.ratio above ratio_threshold"""
     def __init__(self, node):
         self.nodes = {node}
         self.maxNode = node
